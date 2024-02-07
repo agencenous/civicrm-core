@@ -568,6 +568,8 @@ HERESQL;
       $query .= $limit;
     }
 
+    CRM_Utils_Hook::getCaseActivityQuery($query, $type, $userID, $condition, $limit, $order);
+
     return $query;
   }
 
