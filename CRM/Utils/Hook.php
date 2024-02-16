@@ -2910,6 +2910,25 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
+   * This hook is called when cases are queried.
+   * 
+   * @param string $query
+   * @param string $type
+   * @param int $userID
+   * @param string $condition
+   * @param string $limit
+   * @param string $order
+   * 
+   * @return mixed
+   */
+  public static function getCaseActivityQuery(&$query, $type, $userID, $condition, $limit, $order) {
+    $null = NULL;
+    return self::singleton()->invoke(['query', 'type', 'userID', 'condition', 'limit', 'order'], $query, $type, $userID, $condition, $limit, $order,
+      'civicrm_getCaseActivityQuery'
+    );
+  }
+
+  /**
    * This hook is called when core resources are being loaded
    *
    * @see CRM_Core_Resources::coreResourceList
