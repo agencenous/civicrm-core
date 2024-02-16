@@ -83,7 +83,17 @@ class FormWrapper {
 
   private $mailSpoolID;
 
+  /**
+   * @var array|bool
+   */
   private $validation;
+
+  /**
+   * @return array|bool
+   */
+  public function getValidationOutput() {
+    return $this->validation;
+  }
 
   private $originalMailSetting;
 
@@ -124,7 +134,8 @@ class FormWrapper {
       $this->form->buildForm();
     }
     if ($state > self::BUILT) {
-      $this->validation = $this->form->validate();
+      $this->form->validate();
+      $this->validation = $this->form->_errors;
     }
     if ($state > self::VALIDATED) {
       $this->postProcess();
@@ -189,6 +200,8 @@ class FormWrapper {
       foreach ($this->subsequentForms as $form) {
         $form->preProcess();
         $form->buildForm();
+        $form->validate();
+        $this->validation[$form->getName()] = $form->_errors;
         $form->postProcess();
       }
     }
@@ -329,6 +342,9 @@ class FormWrapper {
 
       case strpos($class, 'Search') !== FALSE:
         $this->form->controller = new \CRM_Contact_Controller_Search();
+        if ($class === 'CRM_Contact_Form_Search_Basic') {
+          $this->form->setAction(\CRM_Core_Action::BASIC);
+        }
         break;
 
       case strpos($class, '_Form_') !== FALSE:

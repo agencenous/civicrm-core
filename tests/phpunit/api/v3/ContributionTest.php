@@ -33,6 +33,7 @@ class api_v3_ContributionTest extends CiviUnitTestCase {
   use CRMTraits_Financial_TaxTrait;
   use CRMTraits_Financial_PriceSetTrait;
   use FormTrait;
+  use CRM_Core_Payment_AuthorizeNetTrait;
 
   protected $individualID;
   protected $financialTypeID = 1;
@@ -84,6 +85,7 @@ class api_v3_ContributionTest extends CiviUnitTestCase {
    */
   public function tearDown(): void {
     $this->quickCleanUpFinancialEntities();
+    $this->restoreMembershipTypes();
     $this->quickCleanup(['civicrm_uf_match'], TRUE);
     $financialAccounts = $this->callAPISuccess('FinancialAccount', 'get', ['return' => 'name']);
     foreach ($financialAccounts['values'] as $financialAccount) {
@@ -3312,8 +3314,9 @@ class api_v3_ContributionTest extends CiviUnitTestCase {
       'Annual CiviCRM meet',
       'Event',
       'This is a confirmation that your registration has been received and your status has been updated to Registered.',
-      'First Name: Logged In',
-      'Public title',
+      'First Name',
+      'Logged In',
+      'Public Event Post Post Profile',
       'public 2',
       'public 3',
     ], ['Back end title', 'title_post_2', 'title_post_3']);

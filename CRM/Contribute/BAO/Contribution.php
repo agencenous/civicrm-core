@@ -24,7 +24,7 @@ use Civi\Core\Event\PostEvent;
  * @package CRM
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
-class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution implements Civi\Test\HookInterface {
+class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution implements Civi\Core\HookInterface {
 
   /**
    * Static field for all the contribution information that we can potentially import
@@ -1833,10 +1833,7 @@ LEFT JOIN  civicrm_contribution contribution ON ( componentPayment.contribution_
       }
     }
 
-    $paymentProcessorID = CRM_Utils_Array::value('payment_processor_id', $input, CRM_Utils_Array::value(
-      'paymentProcessor',
-      $ids
-    ));
+    $paymentProcessorID = $input['payment_processor_id'] ?? $ids['paymentProcessor'] ?? NULL;
 
     if (!isset($input['payment_processor_id']) && !$paymentProcessorID && $contribution->contribution_page_id) {
       $paymentProcessorID = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage',
@@ -2668,6 +2665,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         }
       }
       else {
+        $values['modelProps'] = $input['modelProps'] ?? [];
         return CRM_Contribute_BAO_ContributionPage::sendMail($ids['contact'], $values, $isTest, $returnMessageText);
       }
     }
@@ -2963,29 +2961,27 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         'label' => $this->_relatedObjects['participant']->fee_level . ' - ' . $primaryEmail,
         'amount' => $this->_relatedObjects['participant']->fee_amount,
       ];
+      $primaryParticipantID = $this->_relatedObjects['participant']->id;
+      $additionalIDs = CRM_Event_BAO_Participant::getAdditionalParticipantIds($primaryParticipantID);
       //build an array of cId/pId of participants
-      $additionalIDs = CRM_Event_BAO_Event::buildCustomProfile($this->_relatedObjects['participant']->id, NULL, $this->_relatedObjects['contact']->id, $isTest, TRUE);
-      unset($additionalIDs[$this->_relatedObjects['participant']->id]);
       //send receipt to additional participant if exists
       if (count($additionalIDs)) {
         $template->assign('isPrimary', 0);
         $template->assign('customProfile', NULL);
         //set additionalParticipant true
         $values['params']['additionalParticipant'] = TRUE;
-        foreach ($additionalIDs as $pId => $cId) {
+        foreach ($additionalIDs as $participantID) {
           $amount = [];
           //to change the status pending to completed
           $additional = new CRM_Event_DAO_Participant();
-          $additional->id = $pId;
-          $additional->contact_id = $cId;
+          $additional->id = $participantID;
           $additional->find(TRUE);
-          $additional->register_date = $this->_relatedObjects['participant']->register_date;
-          $additional->status_id = 1;
+          $contactID = (int) $additional->contact_id;
           $additionalParticipantInfo = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Email', $additional->contact_id, 'email', 'contact_id');
           //if additional participant dont have email
           //use display name.
           if (!$additionalParticipantInfo) {
-            $additionalParticipantInfo = CRM_Contact_BAO_Contact::displayName($additional->contact_id);
+            $additionalParticipantInfo = CRM_Contact_BAO_Contact::displayName($contactID);
           }
           $amount[0] = [
             'label' => $additional->fee_level,
@@ -2995,9 +2991,8 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
             'label' => $additional->fee_level . ' - ' . $additionalParticipantInfo,
             'amount' => $additional->fee_amount,
           ];
-          $additional->save();
           $template->assign('amount', $amount);
-          CRM_Event_BAO_Event::sendMail($cId, $values, $pId, $isTest, $returnMessageText);
+          CRM_Event_BAO_Event::sendMail($contactID, $values, $participantID, $isTest, $returnMessageText);
         }
       }
 
@@ -3389,7 +3384,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
       && $params['prevContribution']->contribution_status_id != $params['contribution']->contribution_status_id
     ) {
       $eventID = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $entityId, 'event_id');
-      $feeLevel[] = str_replace('', '', $params['prevContribution']->amount_level);
+      $feeLevel = str_replace('�', '', $params['prevContribution']->amount_level);
       CRM_Event_BAO_Participant::createDiscountTrxn($eventID, $params, $feeLevel);
     }
     unset($params['line_item']);
@@ -3506,6 +3501,13 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         if ($context !== 'validate') {
           $params['condition'] = "v.name <> 'Template'";
         }
+        break;
+
+      case 'payment_instrument_id':
+        if (isset($props['filter'])) {
+          $params['condition'] = "v.filter = " . $props['filter'];
+        }
+        break;
     }
     return CRM_Core_PseudoConstant::get($className, $fieldName, $params, $context);
   }
