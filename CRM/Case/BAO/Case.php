@@ -673,7 +673,9 @@ HERESQL;
     $caseTypeTitles = CRM_Case_PseudoConstant::caseType('title', FALSE);
     $activityTypeLabels = CRM_Activity_BAO_Activity::buildOptions('activity_type_id');
 
-    foreach ($result->fetchAll() as $case) {
+    $cases = $result->fetchAll();
+    CRM_Utils_Hook::getCases($cases, $allCases, $params, $context);
+    foreach ($cases as $case) {
       $key = $case['case_id'];
       $casesList[$key] = [];
       $casesList[$key]['DT_RowId'] = $case['case_id'];

@@ -2946,6 +2946,23 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
+   * This hook is called when cases are queried.
+   * 
+   * @param array $cases
+   * @param array $allCases
+   * @param array $params
+   * @param string $context
+   * 
+   * @return array
+   */
+  public static function getCases(&$cases, $allCases, $params, $context) {
+    $null = NULL;
+    return self::singleton()->invoke(['cases', 'allCases', 'params', 'context'], $cases, $allCases, $params, $context, $null, $null,
+      'civicrm_getCases'
+    );
+  }
+
+  /**
    * This hook is called when core resources are being loaded
    *
    * @see CRM_Core_Resources::coreResourceList
