@@ -2929,6 +2929,23 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
+   * This hook is called when cases are queried.
+   * 
+   * @param int $totalCount
+   * @param string $type
+   * @param int $userID
+   * @param string|null $condition
+   * 
+   * @return mixed
+   */
+  public static function getCasesTotalCount(&$totalCount, $type, $userID, $condition) {
+    $null = NULL;
+    return self::singleton()->invoke(['totalCount', 'type', 'userID', 'condition'], $totalCount, $type, $userID, $condition, $null, $null,
+      'civicrm_getCasesTotalCount'
+    );
+  }
+
+  /**
    * This hook is called when core resources are being loaded
    *
    * @see CRM_Core_Resources::coreResourceList

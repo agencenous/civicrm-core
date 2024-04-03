@@ -624,7 +624,9 @@ HERESQL;
     }
     $condition = implode(' AND ', $whereClauses);
 
-    Civi::$statics[__CLASS__]['totalCount'][$type] = $totalCount = CRM_Core_DAO::singleValueQuery(self::getCaseActivityCountQuery($type, $userID, $condition));
+    $totalCount = CRM_Core_DAO::singleValueQuery(self::getCaseActivityCountQuery($type, $userID, $condition));
+    CRM_Utils_Hook::getCasesTotalCount($totalCount, $type, $userID, $condition);
+    Civi::$statics[__CLASS__]['totalCount'][$type] = $totalCount;
     if ($getCount) {
       return $totalCount;
     }
